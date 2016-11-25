@@ -7,7 +7,7 @@ var app = express();
 var url = process.env.MONGOLAB_URI;
 var port = process.env.PORT || 8000;
 
-
+app.use(express.static('public'));
 app.set('view engine', 'jade');
 
 app.get('/new/*', (req, res) => {
@@ -31,8 +31,8 @@ app.get('/new/*', (req, res) => {
                         count = result;
 
                         var urlToBeShorten = {
-                            urlTo: req.url.slice(5),
-                            urlFrom: count++
+                            original_url: req.url.slice(5),
+                            short_url: count++
                         };
 
                         linksCollection.insert(urlToBeShorten, function(err, data) {
@@ -43,8 +43,8 @@ app.get('/new/*', (req, res) => {
                         
                         db.close();
                         res.json({
-                            originalUrl: urlToBeShorten.urlTo,
-                            short_url: "https://url-shortener-microservice-ao.herokuapp.com/" + urlToBeShorten.urlFrom
+                            original_url: urlToBeShorten.original_url,
+                            short_url: "https://url-shortener-microservice-ao.herokuapp.com/" + urlToBeShorten.short_url
                         });
 
 
@@ -69,7 +69,7 @@ app.get('/new/*', (req, res) => {
 });
 
 app.get('/', function(req, res) {
-    res.send('Main');
+    res.render('index.jade');
 });
 
 app.get('/*', (req, res) => {
@@ -83,12 +83,12 @@ app.get('/*', (req, res) => {
             var linksCollection = db.collection('sortenerurl');
 
             linksCollection.find({
-                urlFrom: {
+                short_url: {
                     $eq: +urlToRedirect
                 }
             }).toArray(function(err, result) {
                 if (!err && result.length > 0) {
-                    res.redirect(result[0].urlTo);
+                    res.redirect(result[0].original_url);
                 } else {
                     res.send("Something wrong or there no such shortened link");
                 }
